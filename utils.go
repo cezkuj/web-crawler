@@ -17,7 +17,7 @@ import (
 
 func fetchAndParse(page string) (*html.Node, error) {
 	//Default http client does not have timeout
-	client := http.Client{Timeout: 150 * time.Second}
+	client := http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(page)
 	if err != nil {
 		return nil, err
