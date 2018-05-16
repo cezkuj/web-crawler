@@ -35,28 +35,37 @@ func fetchAndParse(page string) (*html.Node, error) {
 	return doc, nil
 }
 
-func getDomain(page string) string {
+func getDomain(page string) (string, error) {
 	u, err := url.Parse(page)
 	if err != nil {
-		log.Fatal(err)
+                return "", err
 	}
 	hostname := u.Hostname()
 	if strings.HasPrefix(hostname, "www.") {
-		return hostname[4:]
+		return hostname[4:], nil
 	}
-	return hostname
+	return hostname, nil
 }
 
 func checkDomain(page, domain string, matchSubdomains bool) bool {
+        pageDomain, err := getDomain(page)
+        if err != nil {
+         log.Println(err) 
+         return false
+        } 
 	if matchSubdomains {
-		return strings.Contains(getDomain(page), domain)
+		return strings.Contains(pageDomain, domain)
 	}
-	return getDomain(page) == domain
+	return pageDomain == domain
 }
 
-func buildURL(foundOn, relSuffix string) string {
+func buildURL(foundOn, relSuffix string) (string) {
 	if strings.HasPrefix(relSuffix, "/") {
-		return "https://" + getDomain(foundOn) + relSuffix
+                pageDomain, err := getDomain(foundOn)
+                if err != nil {
+                  return ""
+                }
+		return "https://" + pageDomain + relSuffix
 	}
 	return foundOn + "/" + relSuffix
 }
@@ -103,6 +112,9 @@ func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sy
 	//internal relative links
 	if !strings.HasPrefix(u, "http") {
 		u = buildURL(foundOn, u)
+                if u == "" {
+                      return u, false
+                }
 		//full path links, return if external domain
 	} else if !checkDomain(u, domain, matchSubdomains) {
 		return "", false

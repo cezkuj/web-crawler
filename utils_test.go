@@ -6,16 +6,16 @@ import (
 
 func TestGetDomain(t *testing.T) {
 	page := "https://github.com/cezkuj/web-crawler/blob/master/crawl.go"
-	got := getDomain(page)
+	got, err := getDomain(page)
 	want := "github.com"
-	if got != want {
-		t.Errorf("TestGetDomain failed got: %v, want: %v", got, want)
+	if got != want || err != nil {
+		t.Errorf("TestGetDomain failed got: %v, want: %v, err: %v", got, want, err)
 	}
 	page = "https://www.reddit.com"
-	got = getDomain(page)
+	got, err = getDomain(page)
 	want = "reddit.com"
-	if got != want {
-		t.Errorf("TestGetDomain failed got: %v, want: %v", got, want)
+	if got != want || err != nil{
+		t.Errorf("TestGetDomain failed got: %v, want: %v, err: %v", got, want, err)
 	}
 }
 
