@@ -13,9 +13,10 @@ type IdiomaticCrawler struct {
 	matchSubdomains bool
 	toScrap         chan Page
 	toFetch         chan string
+        reqInterval     time.Duration
 }
 
-func NewIdiomaticCrawler(domain string, matchSubdomains bool) *IdiomaticCrawler {
+func NewIdiomaticCrawler(domain string, matchSubdomains bool, reqInterval time.Duration) *IdiomaticCrawler {
 	return &IdiomaticCrawler{
 		domain:          domain,
 		visitedPages:    &sync.Map{},
@@ -23,13 +24,14 @@ func NewIdiomaticCrawler(domain string, matchSubdomains bool) *IdiomaticCrawler 
 		matchSubdomains: matchSubdomains,
 		toScrap:         make(chan Page),
 		toFetch:         make(chan string),
+                reqInterval: reqInterval,
 	}
 }
 func (crawler IdiomaticCrawler) Crawl() sync.Map {
 	crawler.wg.Add(1)
 	go func() {
 		for {
-			time.Sleep(0 * time.Millisecond)
+			time.Sleep(crawler.reqInterval)
 			go crawler.fetch(<-crawler.toFetch)
 		}
 	}()
