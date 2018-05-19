@@ -9,22 +9,29 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
-
+// docu
+func Doc(){
+}
 func main() {
 	domain := os.Args[1]
 	//using keys of map to imitate set
-	visitedPages := make(map[string]bool)
-	crawl(domain, "https://"+domain, visitedPages)
-	log.Println(visitedPages)
+	visitedPages := &sync.Map{}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go crawl(domain, "https://"+domain, visitedPages, wg)
+	wg.Wait()
+        log.Println("finished")
+	visitedPages.Range(printMap)
 
 }
 
-func crawl(domain string, page string, visitedPages map[string]bool) {
-
+func crawl(domain string, page string, visitedPages *sync.Map, wg *sync.WaitGroup) {
+	defer wg.Done()
 	//Default http client does not have timeout
-	client := http.Client{Timeout: 15 * time.Second}
+	client := http.Client{Timeout: 150 * time.Second}
 	resp, err := client.Get(page)
 	if err != nil {
 		log.Println(err)
@@ -33,36 +40,41 @@ func crawl(domain string, page string, visitedPages map[string]bool) {
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	doc, err := html.Parse(bytes.NewReader(body))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
-	parse(doc, domain, visitedPages, page)
+	wg.Add(1)
+	go parse(doc, domain, visitedPages, page, wg)
 }
 
-func parse(n *html.Node, domain string, visitedPages map[string]bool, foundOn string) {
+func parse(n *html.Node, domain string, visitedPages *sync.Map, foundOn string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	if n.Type == html.ElementNode && n.Data == "a" {
 		for _, a := range n.Attr {
 			if a.Key == "href" {
 				log.Println(a.Val)
-				validateUrl(a.Val, domain, foundOn, visitedPages)
+				validateUrl(a.Val, domain, foundOn, visitedPages, wg)
 				break
 			}
 		}
 	}
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		parse(c, domain, visitedPages, foundOn)
+		wg.Add(1)
+		go parse(c, domain, visitedPages, foundOn, wg)
 	}
 }
-func validateUrl(value, domain, foundOn string, visitedPages map[string]bool) {
+func validateUrl(value, domain, foundOn string, visitedPages *sync.Map, wg *sync.WaitGroup) {
 	u := removeGetParams(value)
 	u = removeChapterLinks(u)
-        //return in case of cases not needed to cover
-        if u == "" || u == "/" || strings.HasPrefix(u, "..") || strings.HasPrefix(u, "mailto:") ||  strings.HasPrefix(u, "tel:"){
-            return
-        }
+	//return in case of cases not needed to cover
+	if u == "" || u == "/" || strings.HasPrefix(u, "..") || strings.HasPrefix(u, "mailto:") || strings.HasPrefix(u, "tel:") {
+		return
+	}
 	log.Println("Hi " + u + ", found on: " + foundOn)
 	//internal relative links
 	if !strings.HasPrefix(u, "http") {
@@ -72,15 +84,16 @@ func validateUrl(value, domain, foundOn string, visitedPages map[string]bool) {
 	} else if !checkDomain(u, domain) {
 		return
 	}
-	if !keyInMap(u, visitedPages) {
+	if !keyInMap(u, *visitedPages) {
 		log.Println("Added")
-		visitedPages[u] = true
-		crawl(domain, u, visitedPages)
+		visitedPages.Store(u, true)
+		wg.Add(1)
+		go crawl(domain, u, visitedPages, wg)
 	}
 }
 
-func keyInMap(key string, m map[string]bool) bool {
-	_, ok := m[key]
+func keyInMap(key string, m sync.Map) bool {
+	_, ok := m.Load(key)
 	return ok
 }
 func getDomain(page string) string {
@@ -91,12 +104,13 @@ func getDomain(page string) string {
 	return u.Hostname()
 }
 func checkDomain(page, domain string) bool {
-        return getDomain(page) == domain
-	//return strings.Contains(getDomain(page), domain)
+        //log.Println(getDomain(page), domain)
+	//return getDomain(page) == domain
+	return strings.Contains(getDomain(page), domain)
 }
 
 func buildUrl(foundOn, relSuffix string) string {
-        log.Println(foundOn, relSuffix)
+	log.Println(foundOn, relSuffix)
 	if strings.HasPrefix(relSuffix, "/") {
 		return "https://" + getDomain(foundOn) + relSuffix
 	}
@@ -117,4 +131,9 @@ func removeGetParams(u string) string {
 }
 func removeChapterLinks(u string) string {
 	return removeStringAfterChar(u, "#")
+}
+
+func printMap(key, value interface{}) bool {
+	log.Println(key, value)
+	return true
 }
