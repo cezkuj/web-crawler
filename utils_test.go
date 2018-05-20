@@ -27,22 +27,40 @@ func TestGetDomain(t *testing.T) {
 	if got != want {
 		t.Errorf("TestGetDomain failed got: %v, want: %v", got, want)
 	}
+	page = "https://www.reddit.com"
+	got = getDomain(page)
+	want = "reddit.com"
+	if got != want {
+		t.Errorf("TestGetDomain failed got: %v, want: %v", got, want)
+	}
 }
 
 func TestCheckDomain(t *testing.T) {
+        matchSubdomains := true
 	page := "https://community.monzo.com"
 	domain := "monzo.com"
-	got := checkDomain(page, domain)
+	got := checkDomain(page, domain, matchSubdomains)
 	want := true
 	if got != want {
 		t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
 	}
+        matchSubdomains = false
+        got = checkDomain(page, domain, matchSubdomains)
+        want = false
+        if got != want {
+                t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
+        }
 	page = "https://facebook.com?url=monzo.com"
-	got = checkDomain(page, domain)
+	got = checkDomain(page, domain, matchSubdomains)
 	want = false
 	if got != want {
 		t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
 	}
+        matchSubdomains = true
+        got = checkDomain(page, domain, matchSubdomains)
+        if got != want {
+                t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
+        }        
 }
 
 func TestBuildUrl(t *testing.T) {

@@ -6,28 +6,33 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
 )
-
-func main() {
-	domain := os.Args[1]
-	//using keys of map to imitate set
-	visitedPages := &sync.Map{}
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go crawl(domain, "https://"+domain, visitedPages, wg)
-	wg.Wait()
+type Crawler interface {
+   Crawl(domain string) sync.Map
+}
+type FireAndForgetCrawler struct{
+     domain string
+     visitedPages *sync.Map
+     wg *sync.WaitGroup
+     matchSubdomains bool
+}
+func NewFireAndForgetCrawler(domain string, matchSubdomains bool) *FireAndForgetCrawler{
+  return &FireAndForgetCrawler{domain: domain, visitedPages: &sync.Map{}, wg: &sync.WaitGroup{}, matchSubdomains: matchSubdomains}
+}
+func (crawler FireAndForgetCrawler) Crawl() sync.Map {
+	crawler.wg.Add(1)
+	go crawler.fetch("https://" + crawler.domain)
+	crawler.wg.Wait()
 	log.Println("finished")
-	visitedPages.Range(printMap)
+	return *crawler.visitedPages
 
 }
 
-func crawl(domain string, page string, visitedPages *sync.Map, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (crawler FireAndForgetCrawler) fetch(page string) {
+	defer crawler.wg.Done()
 	//Default http client does not have timeout
 	client := http.Client{Timeout: 150 * time.Second}
 	resp, err := client.Get(page)
@@ -46,28 +51,27 @@ func crawl(domain string, page string, visitedPages *sync.Map, wg *sync.WaitGrou
 		log.Println(err)
 		return
 	}
-	wg.Add(1)
-	go parse(doc, domain, visitedPages, page, wg)
+	crawler.wg.Add(1)
+	go crawler.parse(doc, page)
 }
 
-func parse(n *html.Node, domain string, visitedPages *sync.Map, foundOn string, wg *sync.WaitGroup) {
-	defer wg.Done()
-	if n.Type == html.ElementNode && n.Data == "a" {
-		for _, a := range n.Attr {
-			if a.Key == "href" {
-				log.Println(a.Val)
-				validateUrl(a.Val, domain, foundOn, visitedPages, wg)
+func (crawler FireAndForgetCrawler) parse(node *html.Node, foundOn string) {
+	defer crawler.wg.Done()
+	if node.Type == html.ElementNode && node.Data == "a" {
+		for _, attr := range node.Attr {
+			if attr.Key == "href" {
+				crawler.validateUrl(attr.Val, foundOn)
 				break
 			}
 		}
 	}
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		wg.Add(1)
-		go parse(c, domain, visitedPages, foundOn, wg)
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		crawler.wg.Add(1)
+		go crawler.parse(child, foundOn)
 	}
 }
-func validateUrl(value, domain, foundOn string, visitedPages *sync.Map, wg *sync.WaitGroup) {
-	u := removeGetParams(value)
+func (crawler FireAndForgetCrawler) validateUrl(u, foundOn string) {
+	u = removeGetParams(u)
 	u = removeChapterLinks(u)
 	//return in case of cases not needed to cover
 	if u == "" || u == "/" || strings.HasPrefix(u, "..") || strings.HasPrefix(u, "mailto:") || strings.HasPrefix(u, "tel:") {
@@ -78,53 +82,12 @@ func validateUrl(value, domain, foundOn string, visitedPages *sync.Map, wg *sync
 	if !strings.HasPrefix(u, "http") {
 		u = buildUrl(foundOn, u)
 		//full path links, return if external domain
-	} else if !checkDomain(u, domain) {
+	} else if !checkDomain(u, crawler.domain, crawler.matchSubdomains) {
 		return
 	}
-	if !keyInMap(u, *visitedPages) {
-		visitedPages.Store(u, true)
-		wg.Add(1)
-		go crawl(domain, u, visitedPages, wg)
+	if !keyInMap(u, *crawler.visitedPages) {
+		crawler.visitedPages.Store(u, true)
+		crawler.wg.Add(1)
+		go crawler.fetch(u)
 	}
-}
-
-func keyInMap(key string, m sync.Map) bool {
-	_, ok := m.Load(key)
-	return ok
-}
-func getDomain(page string) string {
-	u, err := url.Parse(page)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return u.Hostname()
-}
-func checkDomain(page, domain string) bool {
-	return strings.Contains(getDomain(page), domain)
-}
-
-func buildUrl(foundOn, relSuffix string) string {
-	if strings.HasPrefix(relSuffix, "/") {
-		return "https://" + getDomain(foundOn) + relSuffix
-	}
-	return foundOn + "/" + relSuffix
-}
-func removeStringAfterChar(str, ch string) string {
-	if i := strings.Index(str, ch); i != -1 {
-		return str[:i]
-	}
-	return str
-
-}
-func removeGetParams(u string) string {
-	return removeStringAfterChar(u, "?")
-
-}
-func removeChapterLinks(u string) string {
-	return removeStringAfterChar(u, "#")
-}
-
-func printMap(key, value interface{}) bool {
-	log.Println(key, value)
-	return true
 }
