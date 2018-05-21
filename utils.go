@@ -31,10 +31,7 @@ func fetchAndParse(page string) (*html.Node, error) {
 	}
 	return doc, nil
 }
-func keyInMap(key string, m sync.Map) bool {
-	_, ok := m.Load(key)
-	return ok
-}
+
 func getDomain(page string) string {
 	u, err := url.Parse(page)
 	if err != nil {
@@ -46,6 +43,7 @@ func getDomain(page string) string {
 	}
 	return hostname
 }
+
 func checkDomain(page, domain string, matchSubdomains bool) bool {
 	if matchSubdomains {
 		return strings.Contains(getDomain(page), domain)
@@ -59,17 +57,19 @@ func buildUrl(foundOn, relSuffix string) string {
 	}
 	return foundOn + "/" + relSuffix
 }
+
 func removeStringAfterChar(str, ch string) string {
 	if i := strings.Index(str, ch); i != -1 {
 		return str[:i]
 	}
 	return str
-
 }
+
 func removeGetParams(u string) string {
 	return removeStringAfterChar(u, "?")
 
 }
+
 func removeChapterLinks(u string) string {
 	return removeStringAfterChar(u, "#")
 }
@@ -78,21 +78,21 @@ func printMap(key, value interface{}) bool {
 	log.Println(key, value)
 	return true
 }
+
 func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sync.Map) (string, bool) {
-        u = removeGetParams(u)
-        u = removeChapterLinks(u)
-        //return in case of cases not needed to cover
-        if u == "" || u == "/" || strings.HasPrefix(u, "..") || strings.HasPrefix(u, "mailto:") || strings.HasPrefix(u, "tel:") {
-                return "", false
-        }
-        log.Println("Hi " + u + ", found on: " + foundOn)
-        //internal relative links
-        if !strings.HasPrefix(u, "http") {
-                u = buildUrl(foundOn, u)
-                //full path links, return if external domain
-        } else if !checkDomain(u, domain, matchSubdomains) {
-                return "", false
-        }
-        _, loaded := visitedPages.LoadOrStore(u, foundOn)
-        return u, !loaded
+	u = removeGetParams(u)
+	u = removeChapterLinks(u)
+	//return in case of cases not needed to cover
+	if u == "" || u == "/" || strings.HasPrefix(u, "..") || strings.HasPrefix(u, "mailto:") || strings.HasPrefix(u, "tel:") {
+		return "", false
+	}
+	//internal relative links
+	if !strings.HasPrefix(u, "http") {
+		u = buildUrl(foundOn, u)
+		//full path links, return if external domain
+	} else if !checkDomain(u, domain, matchSubdomains) {
+		return "", false
+	}
+	_, loaded := visitedPages.LoadOrStore(u, foundOn)
+	return u, !loaded
 }

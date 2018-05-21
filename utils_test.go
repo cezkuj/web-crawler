@@ -1,24 +1,8 @@
 package main
 
 import (
-	"sync"
 	"testing"
 )
-
-func TestKeyInMap(t *testing.T) {
-	m := &sync.Map{}
-	m.Store("test", true)
-	got := keyInMap("test", *m)
-	want := true
-	if got != want {
-		t.Errorf("TestKeyInMap failed got: %v, want: %v", got, want)
-	}
-	got = keyInMap("test2", *m)
-	want = false
-	if got != want {
-		t.Errorf("TestKeyInMap failed got: %v, want: %v", got, want)
-	}
-}
 
 func TestGetDomain(t *testing.T) {
 	page := "https://github.com/cezkuj/web-crawler/blob/master/crawl.go"

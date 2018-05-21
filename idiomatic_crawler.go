@@ -30,7 +30,7 @@ func (crawler IdiomaticCrawler) Crawl() sync.Map {
 	crawler.wg.Add(1)
 	go func() {
 		for {
-                        time.Sleep(100 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 			go crawler.fetch(<-crawler.toFetch)
 		}
 	}()

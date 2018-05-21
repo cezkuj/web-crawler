@@ -45,12 +45,15 @@ func (crawler FireAndForgetCrawler) parse(page Page) {
 	defer crawler.wg.Done()
 	if page.content.Type == html.ElementNode && page.content.Data == "a" {
 		for _, attr := range page.content.Attr {
-                          if u, inserted := insertURL(attr.Val, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages); inserted {
-                                        crawler.wg.Add(1)
-                                        go crawler.fetch(u)
-                                }
-                                break
+			if attr.Key == "href" {
+				if u, inserted := insertURL(attr.Val, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages); inserted {
+					crawler.wg.Add(1)
+					go crawler.fetch(u)
+				}
+				break
+			}
 		}
+
 	}
 	for child := page.content.FirstChild; child != nil; child = child.NextSibling {
 		crawler.wg.Add(1)

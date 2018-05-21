@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TTestFireAndForgetCrawler(*testing.T) {
+func TestFireAndForgetCrawler(*testing.T) {
 	domain := "lhsystems.pl"
 	matchSubdomains := false
 	crawler := NewFireAndForgetCrawler(domain, matchSubdomains)
