@@ -10,6 +10,6 @@ func main() {
 	matchSubdomains := false
 	crawler := NewIdiomaticCrawler(domain, matchSubdomains)
 	results := crawler.Crawl()
-	results.Range(printMap)
+	printResults(domain, results)
 
 }

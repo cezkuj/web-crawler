@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"golang.org/x/net/html"
+
+	"github.com/golang-collections/collections/stack"
 )
 
 func fetchAndParse(page string) (*html.Node, error) {
@@ -107,4 +109,60 @@ func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sy
 	}
 	_, loaded := visitedPages.LoadOrStore(u, foundOn)
 	return u, !loaded
+}
+
+func stackPages(pageName string, m map[string]string) (*stack.Stack, string) {
+	st := stack.New()
+	for ; m[pageName] != ""; pageName = m[pageName] {
+		st.Push(pageName)
+	}
+	return st, pageName
+}
+
+func printResults(domain string, visitedPages sync.Map) {
+	//cast sync.Map to map for simplicity
+	pages := make(map[string]string)
+	visitedPages.Range(castSyncMapToBultin(pages))
+	p_head := PageTree{domain, make(map[string]PageTree)}
+	for key := range pages {
+		p := p_head
+		st, _ := stackPages(key, pages)
+		for st.Len() > 0 {
+			pageName, ok := st.Pop().(string)
+			if !ok {
+				log.Println("not ok")
+				break
+			}
+			if _, present := p.subPages[pageName]; !present {
+				page := PageTree{pageName, make(map[string]PageTree)}
+				p.subPages[page.name] = page
+				p = page
+			} else {
+				p = p.subPages[pageName]
+			}
+		}
+	}
+	printPages(p_head, 0)
+}
+
+func printPages(page PageTree, depth int) {
+	depth++
+	log.Println(strings.Repeat(" ", depth*4), depth, page.name)
+	for _, subpage := range page.subPages {
+		printPages(subpage, depth)
+	}
+}
+func castSyncMapToBultin(m map[string]string) func(key, value interface{}) bool {
+	return func(key, value interface{}) bool {
+                key_s, ok := key.(string)
+                if !ok {
+                   log.Println("not ok")
+                }
+                value_s, ok := value.(string)
+                if !ok {
+                   log.Println("not ok")
+                }
+		m[key_s] = value_s
+		return true
+	}
 }
