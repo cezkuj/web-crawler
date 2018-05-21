@@ -24,6 +24,8 @@ func (crawler FireAndForgetCrawler) Crawl() sync.Map {
 	crawler.wg.Add(1)
 	go crawler.fetch("https://" + crawler.domain)
 	crawler.wg.Wait()
+        //Avoid infinite loops in printing by deleting main page
+        crawler.visitedPages.Delete("https://" + crawler.domain)
 	log.Println("finished")
 	return *crawler.visitedPages
 

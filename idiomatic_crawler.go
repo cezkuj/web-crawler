@@ -29,7 +29,7 @@ func (crawler IdiomaticCrawler) Crawl() sync.Map {
 	crawler.wg.Add(1)
 	go func() {
 		for {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(0 * time.Millisecond)
 			go crawler.fetch(<-crawler.toFetch)
 		}
 	}()
@@ -40,7 +40,8 @@ func (crawler IdiomaticCrawler) Crawl() sync.Map {
 	}()
 	crawler.toFetch <- ("https://" + crawler.domain)
 	crawler.wg.Wait()
-	log.Println("finished")
+        //Avoid infinite loops in printing by deleting main page
+        crawler.visitedPages.Delete("https://" + crawler.domain)
 	return *crawler.visitedPages
 }
 
@@ -58,6 +59,7 @@ func (crawler IdiomaticCrawler) fetch(page string) {
 func (crawler IdiomaticCrawler) scrap(page Page) {
 	defer crawler.wg.Done()
 	if link, found := findLink(page); found {
+                log.Println("Found link: " + link)
 		if u, inserted := insertURL(link, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages); inserted {
 			crawler.wg.Add(1)
 			crawler.toFetch <- u
