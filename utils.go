@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"golang.org/x/net/html"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 func fetchAndParse(page string) (*html.Node, error) {
@@ -51,7 +52,7 @@ func checkDomain(page, domain string, matchSubdomains bool) bool {
 	return getDomain(page) == domain
 }
 
-func buildUrl(foundOn, relSuffix string) string {
+func buildURL(foundOn, relSuffix string) string {
 	if strings.HasPrefix(relSuffix, "/") {
 		return "https://" + getDomain(foundOn) + relSuffix
 	}
@@ -78,7 +79,18 @@ func printMap(key, value interface{}) bool {
 	log.Println(key, value)
 	return true
 }
+func findLink(page Page) (string, bool) {
+	if page.content.Type == html.ElementNode && page.content.Data == "a" {
+		for _, attr := range page.content.Attr {
+			if attr.Key == "href" {
+				return attr.Val, true
+			}
+			return "", false
+		}
+	}
+	return "", false
 
+}
 func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sync.Map) (string, bool) {
 	u = removeGetParams(u)
 	u = removeChapterLinks(u)
@@ -88,7 +100,7 @@ func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sy
 	}
 	//internal relative links
 	if !strings.HasPrefix(u, "http") {
-		u = buildUrl(foundOn, u)
+		u = buildURL(foundOn, u)
 		//full path links, return if external domain
 	} else if !checkDomain(u, domain, matchSubdomains) {
 		return "", false

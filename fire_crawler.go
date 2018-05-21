@@ -1,7 +1,6 @@
 package main
 
 import (
-	"golang.org/x/net/html"
 	"log"
 	"sync"
 )
@@ -43,15 +42,10 @@ func (crawler FireAndForgetCrawler) fetch(page string) {
 
 func (crawler FireAndForgetCrawler) parse(page Page) {
 	defer crawler.wg.Done()
-	if page.content.Type == html.ElementNode && page.content.Data == "a" {
-		for _, attr := range page.content.Attr {
-			if attr.Key == "href" {
-				if u, inserted := insertURL(attr.Val, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages); inserted {
-					crawler.wg.Add(1)
-					go crawler.fetch(u)
-				}
-				break
-			}
+	if link, found := findLink(page); found {
+		if u, inserted := insertURL(link, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages); inserted {
+			crawler.wg.Add(1)
+			go crawler.fetch(u)
 		}
 
 	}

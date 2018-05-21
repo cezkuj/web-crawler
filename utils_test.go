@@ -47,16 +47,16 @@ func TestCheckDomain(t *testing.T) {
 	}
 }
 
-func TestBuildUrl(t *testing.T) {
+func TestBuildURL(t *testing.T) {
 	path := "/about"
 	url := "https://github.com/blog"
-	got := buildUrl(url, path)
+	got := buildURL(url, path)
 	want := "https://github.com/about"
 	if got != want {
 		t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)
 	}
 	path = "about"
-	got = buildUrl(url, path)
+	got = buildURL(url, path)
 	want = "https://github.com/blog/about"
 	if got != want {
 		t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)
