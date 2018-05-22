@@ -1,4 +1,4 @@
-package main
+package webcrawler
 
 import (
 	"bytes"
@@ -86,10 +86,6 @@ func removeChapterLinks(u string) string {
 	return removeStringAfterChar(u, "#")
 }
 
-func printMap(key, value interface{}) bool {
-	log.Println(key, value)
-	return true
-}
 func findLink(page Page) (string, bool) {
 	if page.content.Type == html.ElementNode && page.content.Data == "a" {
 		for _, attr := range page.content.Attr {
@@ -135,7 +131,7 @@ func stackPages(pageName interface{}, m sync.Map) *stack.Stack {
 	return st
 }
 
-func printResults(domain string, visitedPages sync.Map) {
+func PrintResults(domain string, visitedPages sync.Map) {
 	head := PageTree{domain, make(map[string]PageTree)}
 	visitedPages.Range(iterateOverKeys(head, visitedPages))
 	printPages(head, 0)
