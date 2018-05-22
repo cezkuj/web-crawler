@@ -31,16 +31,16 @@ var rootCmd = &cobra.Command{
 
 func crawl(cmd *cobra.Command, args []string) {
 	domain := args[0]
-
 	reqInterval, err := time.ParseDuration(strconv.Itoa(interval) + "ms")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
 	}
+        tls := !insecure
 	start := time.Now()
-	var crawler webcrawler.Crawler = webcrawler.NewIdiomaticCrawler(domain, matchSubdomains, reqInterval)
+	var crawler webcrawler.Crawler = webcrawler.NewIdiomaticCrawler(domain, matchSubdomains, reqInterval, tls)
 	if fire {
-		crawler = webcrawler.NewFireAndForgetCrawler(domain, matchSubdomains)
+		crawler = webcrawler.NewFireAndForgetCrawler(domain, matchSubdomains, tls)
 	}
 	results := crawler.Crawl()
 	endCrawl := time.Now()

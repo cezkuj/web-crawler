@@ -9,15 +9,23 @@ import (
 	"strings"
 	"sync"
 	"time"
+        "crypto/tls"
 
 	"golang.org/x/net/html"
 
 	"github.com/golang-collections/collections/stack"
 )
 
-func fetchAndParse(page string) (*html.Node, error) {
+func fetchAndParse(page string, tlsSecure bool) (*html.Node, error) {
+        timeout := 30 * time.Second 
 	//Default http client does not have timeout
-	client := http.Client{Timeout: 5 * time.Second}
+	client := http.Client{Timeout: timeout}
+        if !tlsSecure {
+            tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+    client = http.Client{Transport: tr, Timeout: timeout}
+        }
 	resp, err := client.Get(page)
 	if err != nil {
 		return nil, err
@@ -38,7 +46,7 @@ func fetchAndParse(page string) (*html.Node, error) {
 func getDomain(page string) (string, error) {
 	u, err := url.Parse(page)
 	if err != nil {
-                return "", err
+		return "", err
 	}
 	hostname := u.Hostname()
 	if strings.HasPrefix(hostname, "www.") {
@@ -48,23 +56,23 @@ func getDomain(page string) (string, error) {
 }
 
 func checkDomain(page, domain string, matchSubdomains bool) bool {
-        pageDomain, err := getDomain(page)
-        if err != nil {
-         log.Println(err) 
-         return false
-        } 
+	pageDomain, err := getDomain(page)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
 	if matchSubdomains {
 		return strings.Contains(pageDomain, domain)
 	}
 	return pageDomain == domain
 }
 
-func buildURL(foundOn, relSuffix string) (string) {
+func buildURL(foundOn, relSuffix string) string {
 	if strings.HasPrefix(relSuffix, "/") {
-                pageDomain, err := getDomain(foundOn)
-                if err != nil {
-                  return ""
-                }
+		pageDomain, err := getDomain(foundOn)
+		if err != nil {
+			return ""
+		}
 		return "https://" + pageDomain + relSuffix
 	}
 	return foundOn + "/" + relSuffix
@@ -86,6 +94,10 @@ func removeChapterLinks(u string) string {
 	return removeStringAfterChar(u, "#")
 }
 
+func printMap(key, value interface{}) bool {
+	log.Println(key, value)
+	return true
+}
 func findLink(page Page) (string, bool) {
 	if page.content.Type == html.ElementNode && page.content.Data == "a" {
 		for _, attr := range page.content.Attr {
@@ -108,9 +120,9 @@ func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sy
 	//internal relative links
 	if !strings.HasPrefix(u, "http") {
 		u = buildURL(foundOn, u)
-                if u == "" {
-                      return u, false
-                }
+		if u == "" {
+			return u, false
+		}
 		//full path links, return if external domain
 	} else if !checkDomain(u, domain, matchSubdomains) {
 		return "", false

@@ -14,7 +14,7 @@ func TestGetDomain(t *testing.T) {
 	page = "https://www.reddit.com"
 	got, err = getDomain(page)
 	want = "reddit.com"
-	if got != want || err != nil{
+	if got != want || err != nil {
 		t.Errorf("TestGetDomain failed got: %v, want: %v, err: %v", got, want, err)
 	}
 }

@@ -10,22 +10,29 @@ type FireAndForgetCrawler struct {
 	visitedPages    *sync.Map
 	wg              *sync.WaitGroup
 	matchSubdomains bool
+        tls bool
 }
 
-func NewFireAndForgetCrawler(domain string, matchSubdomains bool) *FireAndForgetCrawler {
+func NewFireAndForgetCrawler(domain string, matchSubdomains bool, tls bool) *FireAndForgetCrawler {
 	return &FireAndForgetCrawler{
 		domain:          domain,
 		visitedPages:    &sync.Map{},
 		wg:              &sync.WaitGroup{},
 		matchSubdomains: matchSubdomains,
+                tls: tls,
 	}
 }
 func (crawler FireAndForgetCrawler) Crawl() sync.Map {
 	crawler.wg.Add(1)
-	go crawler.fetch("https://" + crawler.domain)
+        prot := "https"
+        if crawler.tls {
+           prot = "http"
+        }
+        mainPage := prot + "://" + crawler.domain
+	go crawler.fetch(mainPage)
 	crawler.wg.Wait()
-        //Avoid infinite loops in printing by deleting main page
-        crawler.visitedPages.Delete("https://" + crawler.domain)
+	//Avoid infinite loops in printing by deleting main page
+	crawler.visitedPages.Delete(mainPage)
 	log.Println("finished")
 	return *crawler.visitedPages
 
@@ -33,7 +40,7 @@ func (crawler FireAndForgetCrawler) Crawl() sync.Map {
 
 func (crawler FireAndForgetCrawler) fetch(page string) {
 	defer crawler.wg.Done()
-	doc, err := fetchAndParse(page)
+	doc, err := fetchAndParse(page, crawler.tls)
 	if err != nil {
 		log.Println(err)
 		return

@@ -13,10 +13,11 @@ type IdiomaticCrawler struct {
 	matchSubdomains bool
 	toScrap         chan Page
 	toFetch         chan string
-        reqInterval     time.Duration
+	reqInterval     time.Duration
+        tls bool
 }
 
-func NewIdiomaticCrawler(domain string, matchSubdomains bool, reqInterval time.Duration) *IdiomaticCrawler {
+func NewIdiomaticCrawler(domain string, matchSubdomains bool, reqInterval time.Duration, tls bool) *IdiomaticCrawler {
 	return &IdiomaticCrawler{
 		domain:          domain,
 		visitedPages:    &sync.Map{},
@@ -24,7 +25,8 @@ func NewIdiomaticCrawler(domain string, matchSubdomains bool, reqInterval time.D
 		matchSubdomains: matchSubdomains,
 		toScrap:         make(chan Page),
 		toFetch:         make(chan string),
-                reqInterval: reqInterval,
+		reqInterval:     reqInterval,
+                tls: tls,
 	}
 }
 func (crawler IdiomaticCrawler) Crawl() sync.Map {
@@ -40,16 +42,21 @@ func (crawler IdiomaticCrawler) Crawl() sync.Map {
 			go crawler.scrap(<-crawler.toScrap)
 		}
 	}()
-	crawler.toFetch <- ("https://" + crawler.domain)
+        prot := "https"
+        if !crawler.tls {
+           prot = "http"
+        }
+        mainPage := prot + "://" + crawler.domain
+	crawler.toFetch <- (mainPage)
 	crawler.wg.Wait()
-        //Avoid infinite loops in printing by deleting main page
-        crawler.visitedPages.Delete("https://" + crawler.domain)
+	//Avoid infinite loops in printing by deleting main page
+	crawler.visitedPages.Delete(mainPage)
 	return *crawler.visitedPages
 }
 
 func (crawler IdiomaticCrawler) fetch(page string) {
 	defer crawler.wg.Done()
-	doc, err := fetchAndParse(page)
+	doc, err := fetchAndParse(page, crawler.tls)
 	if err != nil {
 		log.Println(err)
 		return
@@ -61,7 +68,6 @@ func (crawler IdiomaticCrawler) fetch(page string) {
 func (crawler IdiomaticCrawler) scrap(page Page) {
 	defer crawler.wg.Done()
 	if link, found := findLink(page); found {
-                log.Println("Found link: " + link)
 		if u, inserted := insertURL(link, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages); inserted {
 			crawler.wg.Add(1)
 			crawler.toFetch <- u
