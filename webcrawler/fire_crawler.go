@@ -2,6 +2,7 @@ package webcrawler
 
 import (
 	"log"
+	"net/http"
 	"sync"
 )
 
@@ -9,8 +10,9 @@ type FireAndForgetCrawler struct {
 	domain          string
 	visitedPages    *sync.Map
 	wg              *sync.WaitGroup
+	client          http.Client
 	matchSubdomains bool
-        tls bool
+	tls             bool
 }
 
 func NewFireAndForgetCrawler(domain string, matchSubdomains bool, tls bool) *FireAndForgetCrawler {
@@ -18,29 +20,29 @@ func NewFireAndForgetCrawler(domain string, matchSubdomains bool, tls bool) *Fir
 		domain:          domain,
 		visitedPages:    &sync.Map{},
 		wg:              &sync.WaitGroup{},
+		client:          clientWithTimeout(tls),
 		matchSubdomains: matchSubdomains,
-                tls: tls,
+		tls:             tls,
 	}
 }
 func (crawler FireAndForgetCrawler) Crawl() sync.Map {
 	crawler.wg.Add(1)
-        prot := "https"
-        if crawler.tls {
-           prot = "http"
-        }
-        mainPage := prot + "://" + crawler.domain
+	prot := "https"
+	if crawler.tls {
+		prot = "http"
+	}
+	mainPage := prot + "://" + crawler.domain
 	go crawler.fetch(mainPage)
 	crawler.wg.Wait()
 	//Avoid infinite loops in printing by deleting main page
 	crawler.visitedPages.Delete(mainPage)
-	log.Println("finished")
 	return *crawler.visitedPages
 
 }
 
 func (crawler FireAndForgetCrawler) fetch(page string) {
 	defer crawler.wg.Done()
-	doc, err := fetchAndParse(page, crawler.tls)
+	doc, err := fetchAndParse(page, crawler.tls, crawler.client)
 	if err != nil {
 		log.Println(err)
 		return

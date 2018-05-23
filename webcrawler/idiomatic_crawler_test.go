@@ -1,18 +1,18 @@
 package webcrawler
 
 import (
+	"log"
+	"strconv"
 	"testing"
 	"time"
-        "log"
-        "strconv"
 )
 
 func testWrapperIdiomatic(domain string, intervalMillis int, tls bool) {
 	matchSubdomains := false
 	reqInterval, err := time.ParseDuration(strconv.Itoa(intervalMillis) + "ms")
-        if err != nil {
-           log.Fatal(err)
-        }
+	if err != nil {
+		log.Fatal(err)
+	}
 	crawler := NewIdiomaticCrawler(domain, matchSubdomains, reqInterval, tls)
 	crawler.Crawl()
 
@@ -34,14 +34,13 @@ func TestIdiomaticCrawlerDoug(*testing.T) {
 }
 
 func TestIdiomaticCrawlerPB(*testing.T) {
-        testWrapperIdiomatic("pbpython.com", 0, false)
+	testWrapperIdiomatic("pbpython.com", 0, false)
 }
 
 func TestIdiomaticCrawlerBourgon(*testing.T) {
-        testWrapperIdiomatic("peter.bourgon.org", 0, false)
+	testWrapperIdiomatic("peter.bourgon.org", 0, false)
 }
 
 func TestIdiomaticCrawlerRakyll(*testing.T) {
-        testWrapperIdiomatic("rakyll.org", 0, true)
+	testWrapperIdiomatic("rakyll.org", 0, true)
 }
-

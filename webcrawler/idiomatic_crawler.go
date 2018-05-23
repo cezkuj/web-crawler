@@ -2,6 +2,7 @@ package webcrawler
 
 import (
 	"log"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -10,11 +11,12 @@ type IdiomaticCrawler struct {
 	domain          string
 	visitedPages    *sync.Map
 	wg              *sync.WaitGroup
+	client          http.Client
 	matchSubdomains bool
 	toScrap         chan Page
 	toFetch         chan string
 	reqInterval     time.Duration
-        tls bool
+	tls             bool
 }
 
 func NewIdiomaticCrawler(domain string, matchSubdomains bool, reqInterval time.Duration, tls bool) *IdiomaticCrawler {
@@ -22,11 +24,12 @@ func NewIdiomaticCrawler(domain string, matchSubdomains bool, reqInterval time.D
 		domain:          domain,
 		visitedPages:    &sync.Map{},
 		wg:              &sync.WaitGroup{},
+		client:          clientWithTimeout(tls),
 		matchSubdomains: matchSubdomains,
 		toScrap:         make(chan Page),
 		toFetch:         make(chan string),
 		reqInterval:     reqInterval,
-                tls: tls,
+		tls:             tls,
 	}
 }
 func (crawler IdiomaticCrawler) Crawl() sync.Map {
@@ -42,11 +45,11 @@ func (crawler IdiomaticCrawler) Crawl() sync.Map {
 			go crawler.scrap(<-crawler.toScrap)
 		}
 	}()
-        prot := "https"
-        if !crawler.tls {
-           prot = "http"
-        }
-        mainPage := prot + "://" + crawler.domain
+	prot := "https"
+	if !crawler.tls {
+		prot = "http"
+	}
+	mainPage := prot + "://" + crawler.domain
 	crawler.toFetch <- (mainPage)
 	crawler.wg.Wait()
 	//Avoid infinite loops in printing by deleting main page
@@ -56,7 +59,7 @@ func (crawler IdiomaticCrawler) Crawl() sync.Map {
 
 func (crawler IdiomaticCrawler) fetch(page string) {
 	defer crawler.wg.Done()
-	doc, err := fetchAndParse(page, crawler.tls)
+	doc, err := fetchAndParse(page, crawler.tls, crawler.client)
 	if err != nil {
 		log.Println(err)
 		return

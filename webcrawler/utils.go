@@ -2,6 +2,7 @@ package webcrawler
 
 import (
 	"bytes"
+	"crypto/tls"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -9,23 +10,22 @@ import (
 	"strings"
 	"sync"
 	"time"
-        "crypto/tls"
 
 	"golang.org/x/net/html"
 
 	"github.com/golang-collections/collections/stack"
 )
 
-func fetchAndParse(page string, tlsSecure bool) (*html.Node, error) {
-        timeout := 30 * time.Second 
+func clientWithTimeout(tlsSecure bool) (client http.Client) {
+	timeout := 30 * time.Second
 	//Default http client does not have timeout
-	client := http.Client{Timeout: timeout}
-        if !tlsSecure {
-            tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-    }
-    client = http.Client{Transport: tr, Timeout: timeout}
-        }
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !tlsSecure},
+	}
+	return http.Client{Timeout: timeout, Transport: tr}
+
+}
+func fetchAndParse(page string, tlsSecure bool, client http.Client) (*html.Node, error) {
 	resp, err := client.Get(page)
 	if err != nil {
 		return nil, err
