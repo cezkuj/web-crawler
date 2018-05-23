@@ -5,109 +5,83 @@ import (
 )
 
 func TestGetDomain(t *testing.T) {
-        testCases := []struct{
-             page string
-             expected string
-        }{
-        {"https://github.com/cezkuj/web-crawler/blob/master/crawl.go", "github.com"},
-        {"https://www.reddit.com",  "reddit.com"},
-        }
-        for _, item := range testCases {
-           if actual, err := getDomain(item.page); actual != item.expected || err!= nil {
-          t.Errorf("TestGetDomain failed actual: %v, expected: %v, err: %v", actual, item.expected, err)
-
-}
-        }
-	page := "https://github.com/cezkuj/web-crawler/blob/master/crawl.go"
-	got, err := getDomain(page)
-	want := "github.com"
-	if got != want || err != nil {
-		t.Errorf("TestGetDomain failed got: %v, want: %v, err: %v", got, want, err)
+	testCases := []struct {
+		page     string
+		expected string
+	}{
+		{"https://github.com/cezkuj/web-crawler/blob/master/crawl.go", "github.com"},
+		{"https://www.reddit.com", "reddit.com"},
 	}
-	page = "https://www.reddit.com"
-	got, err = getDomain(page)
-	want = "reddit.com"
-	if got != want || err != nil {
-		t.Errorf("TestGetDomain failed got: %v, want: %v, err: %v", got, want, err)
+	for _, item := range testCases {
+		if actual, err := getDomain(item.page); actual != item.expected || err != nil {
+			t.Errorf("Test failed actual: %v, expected: %v, err: %v", actual, item.expected, err)
+
+		}
 	}
 }
 
 func TestCheckDomain(t *testing.T) {
-	matchSubdomains := true
-	page := "https://community.monzo.com"
-	domain := "monzo.com"
-	got := checkDomain(page, domain, matchSubdomains)
-	want := true
-	if got != want {
-		t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
+	testCases := []struct {
+		page            string
+		domain          string
+		matchSubdomains bool
+		expected        bool
+	}{
+		{"https://community.monzo.com", "monzo.com", true, true},
+		{"https://community.monzo.com", "monzo.com.com", false, false},
+		{"https://facebook.com?url=monzo.com", "monzo.com.com", false, false},
+		{"https://facebook.com?url=monzo.com", "monzo.com.com", true, false},
 	}
-	matchSubdomains = false
-	got = checkDomain(page, domain, matchSubdomains)
-	want = false
-	if got != want {
-		t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
-	}
-	page = "https://facebook.com?url=monzo.com"
-	got = checkDomain(page, domain, matchSubdomains)
-	want = false
-	if got != want {
-		t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
-	}
-	matchSubdomains = true
-	got = checkDomain(page, domain, matchSubdomains)
-	if got != want {
-		t.Errorf("TestCheckDomain failed got: %v, want: %v", got, want)
+	for _, item := range testCases {
+		if actual := checkDomain(item.page, item.domain, item.matchSubdomains); actual != item.expected {
+			t.Errorf("Test failed actual: %v, expected: %v", actual, item.expected)
+		}
 	}
 }
-
 func TestBuildURL(t *testing.T) {
-	path := "/about"
-	url := "https://github.com/blog"
-        tls := true
-	got := buildURL(url, path, tls)
-	want := "https://github.com/about"
-	if got != want {
-		t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)
+	testCases := []struct {
+		url      string
+		path     string
+		tls      bool
+		expected string
+	}{
+		{"https://github.com/blog", "/about", true, "https://github.com/about"},
+		{"http://github.com/blog", "/about", false, "http://github.com/about"},
+		{"http://github.com/blog", "about", false, "http://github.com/blog/about"},
+		{"https://github.com/blog", "about", true, "https://github.com/blog/about"},
 	}
-        tls = false
-        got = buildURL(url, path, tls)
-        want = "http://github.com/about"
-        if got != want {
-                t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)
-        }
-	path = "about"
-        tls = true
-	got = buildURL(url, path, tls)
-	want = "https://github.com/blog/about"
-	if got != want {
-		t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)
+	for _, item := range testCases {
+		if actual := buildURL(item.url, item.path, item.tls); actual != item.expected {
+			t.Errorf("Test failed actual: %v, expected: %v", actual, item.expected)
+		}
 	}
 }
 
 func TestRemoveStringAfterChar(t *testing.T) {
 	str := "abcdefg@abcd"
 	char := "@"
-	got := removeStringAfterChar(str, char)
-	want := "abcdefg"
-	if got != want {
-		t.Errorf("TestRemoveStringAfterChar failed got: %v, want: %v", got, want)
+	actual := removeStringAfterChar(str, char)
+	expected := "abcdefg"
+	if actual != expected {
+		t.Errorf("Test failed actual: %v, expected: %v", actual, expected)
 	}
 }
 
 func TestRemoveGetParams(t *testing.T) {
 	url := "manageproducts.do?option=1"
-	got := removeGetParams(url)
-	want := "manageproducts.do"
-	if got != want {
-		t.Errorf("TestRemoveGetParams failed got: %v, want: %v", got, want)
+	actual := removeGetParams(url)
+	expected := "manageproducts.do"
+	if actual != expected {
+		t.Errorf("Test failed actual: %v, expected: %v", actual, expected)
 	}
 }
 
 func TestRemoveChapterLinks(t *testing.T) {
 	url := "https://golang.org/pkg/sync/#Map.Delete"
-	got := removeChapterLinks(url)
-	want := "https://golang.org/pkg/sync/"
-	if got != want {
-		t.Errorf("TestRemoveChapterLinks failed got: %v, want: %v", got, want)
+	actual := removeChapterLinks(url)
+	expected := "https://golang.org/pkg/sync/"
+	if actual != expected {
+		t.Errorf("Test failed actual: %v, expected: %v", actual, expected)
 	}
+
 }

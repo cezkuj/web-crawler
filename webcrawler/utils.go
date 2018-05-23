@@ -70,13 +70,13 @@ func checkDomain(page, domain string, matchSubdomains bool) bool {
 	return pageDomain == domain
 }
 
-// in case of relative links, appends 
+// in case of relative links, appends
 func buildURL(foundOn, relSuffix string, tls bool) string {
 	if strings.HasPrefix(relSuffix, "/") {
-                prot := "https"
-                if !tls {
-                   prot = "http"
-                }
+		prot := "https"
+		if !tls {
+			prot = "http"
+		}
 		pageDomain, err := getDomain(foundOn)
 		if err != nil {
 			return ""
