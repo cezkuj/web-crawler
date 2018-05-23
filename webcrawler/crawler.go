@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// Crawl should return sync.Map consisting key - page name and value - page wherepage from key where found
+// Crawl should return *sync.Map consisting key - page name and value - higher-level page ("foundOn" page)
 type Crawler interface {
 	Crawl() *sync.Map
 }
