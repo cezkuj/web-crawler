@@ -2,6 +2,10 @@ package webcrawler
 
 import (
 	"testing"
+        "reflect"
+        "net/http"
+        "crypto/tls"
+        "time"
 )
 
 func TestGetDomain(t *testing.T) {

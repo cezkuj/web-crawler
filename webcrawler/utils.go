@@ -45,11 +45,11 @@ func fetchAndParse(page string, tlsSecure bool, client http.Client) (*html.Node,
 	return doc, nil
 }
 func getProt(tls bool) string {
-   prot := "https"
-        if !tls {
-                prot = "http"
-        }
-  return prot
+	prot := "https"
+	if !tls {
+		prot = "http"
+	}
+	return prot
 
 }
 func getDomain(page string) (string, error) {
@@ -105,10 +105,6 @@ func removeChapterLinks(u string) string {
 	return removeStringAfterChar(u, "#")
 }
 
-func printMap(key, value interface{}) bool {
-	log.Println(key, value)
-	return true
-}
 func findLink(page Page) (string, bool) {
 	if page.content.Type == html.ElementNode && page.content.Data == "a" {
 		for _, attr := range page.content.Attr {
