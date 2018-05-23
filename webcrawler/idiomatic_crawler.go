@@ -73,7 +73,7 @@ func (crawler IdiomaticCrawler) fetch(page string) {
 func (crawler IdiomaticCrawler) scrap(page Page) {
 	defer crawler.wg.Done()
 	if link, found := findLink(page); found {
-		if u, inserted := insertURL(link, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages); inserted {
+		if u, inserted := insertURL(link, page.name, crawler.domain, crawler.matchSubdomains, crawler.visitedPages, crawler.tls); inserted {
                         crawler.wg.Add(1)
 			crawler.toFetch <- u
 		}

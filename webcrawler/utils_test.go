@@ -5,6 +5,19 @@ import (
 )
 
 func TestGetDomain(t *testing.T) {
+        testCases := []struct{
+             page string
+             expected string
+        }{
+        {"https://github.com/cezkuj/web-crawler/blob/master/crawl.go", "github.com"},
+        {"https://www.reddit.com",  "reddit.com"},
+        }
+        for _, item := range testCases {
+           if actual, err := getDomain(item.page); actual != item.expected || err!= nil {
+          t.Errorf("TestGetDomain failed actual: %v, expected: %v, err: %v", actual, item.expected, err)
+
+}
+        }
 	page := "https://github.com/cezkuj/web-crawler/blob/master/crawl.go"
 	got, err := getDomain(page)
 	want := "github.com"
@@ -50,13 +63,21 @@ func TestCheckDomain(t *testing.T) {
 func TestBuildURL(t *testing.T) {
 	path := "/about"
 	url := "https://github.com/blog"
-	got := buildURL(url, path)
+        tls := true
+	got := buildURL(url, path, tls)
 	want := "https://github.com/about"
 	if got != want {
 		t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)
 	}
+        tls = false
+        got = buildURL(url, path, tls)
+        want = "http://github.com/about"
+        if got != want {
+                t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)
+        }
 	path = "about"
-	got = buildURL(url, path)
+        tls = true
+	got = buildURL(url, path, tls)
 	want = "https://github.com/blog/about"
 	if got != want {
 		t.Errorf("TestBuildUrl failed got: %v, want: %v", got, want)

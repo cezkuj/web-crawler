@@ -25,6 +25,8 @@ func clientWithTimeout(tlsSecure bool) (client http.Client) {
 	return http.Client{Timeout: timeout, Transport: tr}
 
 }
+
+//fetchs provided page, then parses it to *html.Node and returns
 func fetchAndParse(page string, tlsSecure bool, client http.Client) (*html.Node, error) {
 	resp, err := client.Get(page)
 	if err != nil {
@@ -55,6 +57,7 @@ func getDomain(page string) (string, error) {
 	return hostname, nil
 }
 
+// checks if page is in expected domain(or one of subdomains in case matchSubdomains is true)
 func checkDomain(page, domain string, matchSubdomains bool) bool {
 	pageDomain, err := getDomain(page)
 	if err != nil {
@@ -67,13 +70,18 @@ func checkDomain(page, domain string, matchSubdomains bool) bool {
 	return pageDomain == domain
 }
 
-func buildURL(foundOn, relSuffix string) string {
+// in case of relative links, appends 
+func buildURL(foundOn, relSuffix string, tls bool) string {
 	if strings.HasPrefix(relSuffix, "/") {
+                prot := "https"
+                if !tls {
+                   prot = "http"
+                }
 		pageDomain, err := getDomain(foundOn)
 		if err != nil {
 			return ""
 		}
-		return "https://" + pageDomain + relSuffix
+		return prot + "://" + pageDomain + relSuffix
 	}
 	return foundOn + "/" + relSuffix
 }
@@ -110,7 +118,7 @@ func findLink(page Page) (string, bool) {
 	return "", false
 
 }
-func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sync.Map) (string, bool) {
+func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sync.Map, tls bool) (string, bool) {
 	u = removeGetParams(u)
 	u = removeChapterLinks(u)
 	//return in case of cases not needed to cover
@@ -119,7 +127,7 @@ func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sy
 	}
 	//internal relative links
 	if !strings.HasPrefix(u, "http") {
-		u = buildURL(foundOn, u)
+		u = buildURL(foundOn, u, tls)
 		if u == "" {
 			return u, false
 		}
