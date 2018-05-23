@@ -33,10 +33,6 @@ func TestIdiomaticCrawlerDoug(*testing.T) {
 	testWrapperIdiomatic("doughellmann.com", 10, true)
 }
 
-func TestIdiomaticCrawlerPB(*testing.T) {
-	testWrapperIdiomatic("pbpython.com", 0, false)
-}
-
 func TestIdiomaticCrawlerBourgon(*testing.T) {
 	testWrapperIdiomatic("peter.bourgon.org", 0, false)
 }

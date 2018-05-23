@@ -44,7 +44,14 @@ func fetchAndParse(page string, tlsSecure bool, client http.Client) (*html.Node,
 	}
 	return doc, nil
 }
+func getProt(tls bool) string {
+   prot := "https"
+        if !tls {
+                prot = "http"
+        }
+  return prot
 
+}
 func getDomain(page string) (string, error) {
 	u, err := url.Parse(page)
 	if err != nil {
@@ -73,15 +80,11 @@ func checkDomain(page, domain string, matchSubdomains bool) bool {
 // in case of relative links, appends
 func buildURL(foundOn, relSuffix string, tls bool) string {
 	if strings.HasPrefix(relSuffix, "/") {
-		prot := "https"
-		if !tls {
-			prot = "http"
-		}
 		pageDomain, err := getDomain(foundOn)
 		if err != nil {
 			return ""
 		}
-		return prot + "://" + pageDomain + relSuffix
+		return getProt(tls) + "://" + pageDomain + relSuffix
 	}
 	return foundOn + "/" + relSuffix
 }
@@ -139,7 +142,7 @@ func insertURL(u, foundOn, domain string, matchSubdomains bool, visitedPages *sy
 	return u, !loaded
 }
 
-func stackPages(pageName interface{}, m sync.Map) *stack.Stack {
+func stackPages(pageName interface{}, m *sync.Map) *stack.Stack {
 	st := stack.New()
 	for {
 		if _, found := m.Load(pageName); !found {
@@ -151,7 +154,7 @@ func stackPages(pageName interface{}, m sync.Map) *stack.Stack {
 	return st
 }
 
-func PrintResults(domain string, visitedPages sync.Map) {
+func PrintResults(domain string, visitedPages *sync.Map) {
 	head := PageTree{domain, make(map[string]PageTree)}
 	visitedPages.Range(iterateOverKeys(head, visitedPages))
 	printPages(head, 0)
@@ -165,7 +168,7 @@ func printPages(page PageTree, depth int) {
 	}
 }
 
-func iterateOverKeys(head PageTree, pages sync.Map) func(key, value interface{}) bool {
+func iterateOverKeys(head PageTree, pages *sync.Map) func(key, value interface{}) bool {
 	return func(key, _ interface{}) bool {
 		p := head
 		st := stackPages(key, pages)

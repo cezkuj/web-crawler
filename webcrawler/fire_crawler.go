@@ -25,18 +25,14 @@ func NewFireAndForgetCrawler(domain string, matchSubdomains bool, tls bool) *Fir
 		tls:             tls,
 	}
 }
-func (crawler FireAndForgetCrawler) Crawl() sync.Map {
+func (crawler FireAndForgetCrawler) Crawl() *sync.Map {
 	crawler.wg.Add(1)
-	prot := "https"
-	if crawler.tls {
-		prot = "http"
-	}
-	mainPage := prot + "://" + crawler.domain
+	mainPage := getProt(crawler.tls) + "://" + crawler.domain
 	go crawler.fetch(mainPage)
 	crawler.wg.Wait()
 	//Avoid infinite loops in printing by deleting main page
 	crawler.visitedPages.Delete(mainPage)
-	return *crawler.visitedPages
+	return crawler.visitedPages
 
 }
 

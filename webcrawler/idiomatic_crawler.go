@@ -32,7 +32,7 @@ func NewIdiomaticCrawler(domain string, matchSubdomains bool, reqInterval time.D
 		tls:             tls,
 	}
 }
-func (crawler IdiomaticCrawler) Crawl() sync.Map {
+func (crawler IdiomaticCrawler) Crawl() *sync.Map {
 	crawler.wg.Add(1)
 	go func() {
 		for page := range crawler.toFetch {
@@ -45,18 +45,14 @@ func (crawler IdiomaticCrawler) Crawl() sync.Map {
 			go crawler.scrap(page)
 		}
 	}()
-	prot := "https"
-	if !crawler.tls {
-		prot = "http"
-	}
-	mainPage := prot + "://" + crawler.domain
+	mainPage := getProt(crawler.tls) + "://" + crawler.domain
 	crawler.toFetch <- (mainPage)
 	crawler.wg.Wait()
 	close(crawler.toFetch)
 	close(crawler.toScrap)
 	//Avoid infinite loops in printing by deleting main page
 	crawler.visitedPages.Delete(mainPage)
-	return *crawler.visitedPages
+	return crawler.visitedPages
 }
 
 func (crawler IdiomaticCrawler) fetch(page string) {

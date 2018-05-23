@@ -27,10 +27,6 @@ func TestFireCrawlerDoug(*testing.T) {
 	testWrapperFire("doughellmann.com", true)
 }
 
-func TestFireCrawlerPB(*testing.T) {
-	testWrapperFire("pbpython.com", false)
-}
-
 func TestFireCrawlerBourgon(*testing.T) {
 	testWrapperFire("peter.bourgon.org", false)
 }

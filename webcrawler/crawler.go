@@ -7,7 +7,7 @@ import (
 
 // Crawl should return sync.Map consisting key - page name and value - page wherepage from key where found
 type Crawler interface {
-	Crawl() sync.Map
+	Crawl() *sync.Map
 }
 
 type Page struct {
