@@ -29,7 +29,10 @@ Flags:
 ### Prerequisites
 
 Go is required to install and run webcrawler.
-Tested with go version go1.10.1 linux/amd64 
+Tested with 
+```
+go version go1.10.1 linux/amd64 
+```
 
 ### Installing
 ```
@@ -44,7 +47,7 @@ webcrawler -h
 cd webcrawler && go test -v
 ```
 Navigate to webcrawler package and run test in verbose mode.
-First, they are run benchmark tests for both kind of crawlers to compare performance and ensure that everythins is fine, then are run standard unit tests.
+First, they are run benchmark tests for both crawlers to compare performance and ensure that everything is fine, then are run standard unit tests.
 
 ## License
 
