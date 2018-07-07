@@ -15,10 +15,6 @@ func TestFireCrawlerLH(*testing.T) {
 	testWrapperFire("lhsystems.pl", true)
 }
 
-func TestFireCrawlerMonzo(*testing.T) {
-	testWrapperFire("monzo.com", true)
-}
-
 func TestFireCrawlerCampoy(*testing.T) {
 	testWrapperFire("campoy.cat", true)
 }

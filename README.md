@@ -12,7 +12,6 @@ webcrawler -h
 Crawles through provided domain and prints site map at the end.
         Examples:
         webcrawler lhsystems.pl
-        webcrawler monzo.com -f
         webcrawler lhsystems.pl -r 10
 
 Usage:

@@ -21,10 +21,6 @@ func TestIdiomaticCrawlerLH(*testing.T) {
 	testWrapperIdiomatic("lhsystems.pl", 1, true)
 }
 
-func TestIdiomaticCrawlerMonzo(*testing.T) {
-	testWrapperIdiomatic("monzo.com", 0, true)
-}
-
 func TestIdiomaticCrawlerCampoy(*testing.T) {
 	testWrapperIdiomatic("campoy.cat", 0, true)
 }
